@@ -1,0 +1,35 @@
+name: notion-sync
+
+on:
+  schedule:
+    - cron: "5 3 * * *"       # ogni giorno alle 03:05 UTC
+  workflow_dispatch: { }      # pulsante "Run workflow" nelle Actions
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    # Evita che due esecuzioni si sovrappongano
+    concurrency:
+      group: notion-sync
+      cancel-in-progress: true
+
+    steps:
+      # 1) Porta il codice nel runner
+      - uses: actions/checkout@v4
+
+      # 2) Installa Python (con cache pip integrata)
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      # 3) Installa le dipendenze
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      # 4) Esegui lo script
+      - name: Run sync
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          DATA_SOURCE_ID: ${{ secrets.DATA_SOURCE_ID }}
+        run: python sync_notion.py
